@@ -12,7 +12,7 @@ cp "$BIN/CodexIsland" "$APP/Contents/MacOS/CodexIsland"
 /usr/bin/python3 -I - "$APP/Contents/Info.plist" <<'PY'
 import plistlib, sys
 with open(sys.argv[1], 'wb') as f:
-    plistlib.dump({'CFBundlePackageType':'APPL','CFBundleExecutable':'CodexIsland','CFBundleIdentifier':'local.codex-island.monitor','CFBundleName':'Codex Island','CFBundleShortVersionString':'0.1.0','CFBundleVersion':'1','LSMinimumSystemVersion':'14.0','NSPrincipalClass':'NSApplication','LSUIElement':True,'NSHighResolutionCapable':True},f)
+    plistlib.dump({'CFBundlePackageType':'APPL','CFBundleExecutable':'CodexIsland','CFBundleIdentifier':'local.codex-island.monitor','CFBundleName':'Codex Island','CFBundleShortVersionString':'0.0.1','CFBundleVersion':'1','LSMinimumSystemVersion':'14.0','NSPrincipalClass':'NSApplication','LSUIElement':True,'NSHighResolutionCapable':True},f)
 PY
 codesign --force --sign - "$APP"
 open -n "$APP"

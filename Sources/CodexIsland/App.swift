@@ -106,7 +106,7 @@ struct IslandView: View {
         return "重置 \(mins / 60)时\(mins % 60)分"
     }
     var body: some View {
-        HStack(spacing: 9) {
+        HStack(spacing: 8) {
             Text("Codex").font(.system(size: 11, weight: .semibold))
             if model.authorizing {
                 if let code = model.userCode {
@@ -116,12 +116,18 @@ struct IslandView: View {
                 Spacer(minLength: 0)
                 Button("取消") { model.cancelLogin() }.font(.system(size: 10))
             } else if model.signedIn {
-                Text(model.usage?.planLabel ?? "—").font(.system(size: 10, weight: .medium)).opacity(0.8)
+                Text(model.usage?.planLabel ?? "—")
+                    .font(.system(size: 10, weight: .medium)).opacity(0.85)
+                    .lineLimit(1).truncationMode(.tail)
+                    .frame(maxWidth: 78, alignment: .leading)
+                    .help(model.usage?.planLabel ?? "套餐未知")
                 Text(model.headline + (model.stale ? "*" : ""))
                     .font(.system(size: 12, weight: .semibold, design: .rounded)).monospacedDigit()
+                    .fixedSize().accessibilityLabel("剩余额度 \(model.headline)\(model.stale ? "，数据已过期" : "")")
                     .help("剩余额度" + (model.stale ? " · 数据已过期" : ""))
                 Spacer(minLength: 0)
-                Text(resetText).font(.system(size: 10)).monospacedDigit().opacity(0.8)
+                Text(resetText).font(.system(size: 10)).monospacedDigit().opacity(0.85)
+                    .lineLimit(1).fixedSize().layoutPriority(1)
                     .help(model.usage?.rateLimit?.windows.first?.resetAt.map { Date(timeIntervalSince1970: $0).formatted() } ?? "重置时间未知")
             } else {
                 Text("登录查看额度").font(.system(size: 10)).opacity(0.7)
@@ -132,7 +138,9 @@ struct IslandView: View {
             Button { Task { await model.refresh() } } label: {
                 Image(systemName: model.loading ? "hourglass" : "arrow.clockwise")
                     .font(.system(size: 10, weight: .medium)).frame(width: 20, height: 24)
-            }.disabled(model.loading || !model.signedIn || model.authorizing).help("刷新额度")
+            }.disabled(model.loading || !model.signedIn || model.authorizing)
+                .accessibilityLabel(model.loading ? "正在刷新额度" : "刷新额度")
+                .help("刷新额度")
         }
         .buttonStyle(.plain)
         .padding(.leading, 12).padding(.trailing, 5)
@@ -140,6 +148,17 @@ struct IslandView: View {
         .foregroundStyle(model.theme.ink)
         .modifier(ThemeSurface(theme: model.theme))
         .help(model.message)
+        .contextMenu {
+            ForEach(IslandTheme.allCases, id: \.self) { theme in
+                Button {
+                    model.theme = theme
+                    UserDefaults.standard.set(theme.rawValue, forKey: "theme")
+                } label: {
+                    if theme == model.theme { Label(theme.rawValue, systemImage: "checkmark") }
+                    else { Text(theme.rawValue) }
+                }
+            }
+        }
     }
 }
 
@@ -148,7 +167,7 @@ final class IslandPanel: NSPanel {
     override var canBecomeMain: Bool { false }
 }
 
-@MainActor final class AppDelegate: NSObject, NSApplicationDelegate {
+@MainActor final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuDelegate {
     let model = Monitor()
     var panel: IslandPanel!
     var status: NSStatusItem!
@@ -162,14 +181,19 @@ final class IslandPanel: NSPanel {
         panel.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         panel.contentView = NSHostingView(rootView: IslandView(model: model))
         position(); panel.orderFrontRegardless()
-        status = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
-        status.button?.title = "◉ Codex"
+        status = NSStatusBar.system.statusItem(withLength: NSStatusItem.squareLength)
+        status.button?.title = ""
+        status.button?.image = BrandIcon.menuBarImage()
+        status.button?.imagePosition = .imageOnly
+        status.button?.toolTip = "Codex Island · 额度监控"
+        status.button?.setAccessibilityLabel("Codex Island 额度监控菜单")
         let menu = NSMenu()
         for (title, action) in [("显示 / 隐藏", #selector(toggle)), ("恢复顶部居中", #selector(recenter)), ("登录授权…", #selector(login)), ("刷新额度", #selector(refresh)), ("退出本应用账号…", #selector(logout)), ("退出", #selector(quit))] {
             let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
             item.target = self; menu.addItem(item)
         }
         let themes = NSMenu()
+        themes.delegate = self
         for theme in IslandTheme.allCases {
             let item = NSMenuItem(title: theme.rawValue, action: #selector(changeTheme(_:)), keyEquivalent: "")
             item.target = self
@@ -190,6 +214,11 @@ final class IslandPanel: NSPanel {
         let height: CGFloat = 28
         let top = min(screen.visibleFrame.maxY, screen.frame.maxY - screen.safeAreaInsets.top) - 4
         panel.setFrame(NSRect(x: screen.frame.midX - width / 2, y: top - height, width: width, height: height), display: true)
+    }
+    func menuWillOpen(_ menu: NSMenu) {
+        for item in menu.items {
+            if let theme = IslandTheme(rawValue: item.title) { item.state = theme == model.theme ? .on : .off }
+        }
     }
     @objc func changeTheme(_ sender: NSMenuItem) {
         guard let theme = IslandTheme(rawValue: sender.title) else { return }

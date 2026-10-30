@@ -11,3 +11,7 @@ session.json
 .session-*
 *.xcuserstate
 xcuserdata/
+node_modules/
+target/
+session.tmp
+session.bak

@@ -1,0 +1,13 @@
+.build/
+.swiftpm/
+dist/
+.DS_Store
+.env
+.env.*
+*.pem
+*.key
+auth.json
+session.json
+.session-*
+*.xcuserstate
+xcuserdata/

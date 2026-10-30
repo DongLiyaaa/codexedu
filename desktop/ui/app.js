@@ -4,10 +4,10 @@ const names = {pro:'Pro 20x',prolite:'Pro 5x',promax:'Pro 50x',plus:'Plus'};
 let busy=false, authenticating=false, last=null, next=0, stale=false;
 function resetText(){
  const at=last?.rate_limit?.primary_window?.reset_at;
- if(!at) return '重置 —';
+ if(!at) return '—';
  const m=Math.ceil((at*1000-Date.now())/60000);
  if(m<=0)return '待重置';
- return m>=1440?`重置 ${Math.floor(m/1440)}天${Math.floor(m%1440/60)}时`:`重置 ${Math.floor(m/60)}时${m%60}分`;
+ return m>=1440?`${Math.floor(m/1440)}天${Math.floor(m%1440/60)}时${m%60}分`:`${Math.floor(m/60)}时${m%60}分`;
 }
 function render(){
  $('reset').textContent=resetText();

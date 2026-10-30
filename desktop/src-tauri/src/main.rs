@@ -97,7 +97,7 @@ async fn usage(store: State<'_, Store>) -> Result<Value, String> {
         }
         if !response.status().is_success() { return Err(format!("额度查询失败（HTTP {}）", response.status().as_u16())); }
         let value: Value = response.json().await.map_err(|_| "额度响应异常")?;
-        if let id = value["account_id"].as_str() { if id != session.account_id { return Err("账号不匹配".into()); } }
+        if let Some(id) = value["account_id"].as_str() { if id != session.account_id { return Err("账号不匹配".into()); } }
         // Only return display data, never identity fields or tokens to the webview.
         return Ok(json!({"plan_type":value["plan_type"],"rate_limit":value["rate_limit"]}));
     }

@@ -98,12 +98,12 @@ import QuotaCore
 struct IslandView: View {
     @ObservedObject var model: Monitor
     var resetText: String {
-        guard let reset = model.usage?.rateLimit?.windows.first?.resetAt else { return "重置 —" }
+        guard let reset = model.usage?.rateLimit?.windows.first?.resetAt else { return "—" }
         let remaining = reset - model.now.timeIntervalSince1970
         guard remaining > 0 else { return "待重置" }
         let mins = Int(ceil(remaining / 60))
-        if mins >= 1440 { return "重置 \(mins / 1440)天\(mins % 1440 / 60)时" }
-        return "重置 \(mins / 60)时\(mins % 60)分"
+        if mins >= 1440 { return "\(mins / 1440)天\(mins % 1440 / 60)时\(mins % 60)分" }
+        return "\(mins / 60)时\(mins % 60)分"
     }
     var body: some View {
         HStack(spacing: 8) {
